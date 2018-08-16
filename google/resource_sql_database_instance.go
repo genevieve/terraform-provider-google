@@ -367,6 +367,7 @@ func resourceSqlDatabaseInstance() *schema.Resource {
 					},
 				},
 			},
+
 			"server_ca_cert": &schema.Schema{
 				Type:     schema.TypeList,
 				Computed: true,
@@ -396,6 +397,12 @@ func resourceSqlDatabaseInstance() *schema.Resource {
 					},
 				},
 			},
+
+			"first_server_ca_cert": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
@@ -781,8 +788,16 @@ func resourceSqlDatabaseInstanceRead(d *schema.ResourceData, meta interface{}) e
 		}
 	}
 
-	if err := d.Set("server_ca_cert", flattenServerCaCert(instance.ServerCaCert)); err != nil {
+	serverCaCerts := flattenServerCaCert(instance.ServerCaCert)
+	if err := d.Set("server_ca_cert", serverCaCerts); err != nil {
 		log.Printf("[WARN] Failed to set SQL Database CA Certificate")
+	}
+
+	if len(serverCaCerts) > 0 {
+		firstServerCaCert := serverCaCerts[0]["cert"]
+		if err := d.Set("first_server_ca_cert", firstServerCaCert); err != nil {
+			log.Printf("[WARN] Failed to set SQL Database Instance First Server CA Cert")
+		}
 	}
 
 	d.Set("master_instance_name", strings.TrimPrefix(instance.MasterInstanceName, project+":"))
